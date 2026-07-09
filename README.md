@@ -1,130 +1,79 @@
 # CivicTrack – NDP IV Planning & Intelligence Platform
 
-> **Empowering evidence-based leadership through modern planning, monitoring, and constituency intelligence.**
+CivicTrack is a prototype government planning, monitoring and decision-support platform designed around Uganda's National Development Plan IV (NDP IV).
 
-CivicTrack is a prototype digital platform designed around Uganda's National Development Plan IV (NDP IV) to strengthen planning, monitoring, accountability, and decision-making across all levels of government.
-
-The platform is built to bridge the gap between national development priorities and implementation on the ground by presenting government information in a way that is practical, visual, and actionable.
-
----
-
-## Project Purpose
-
-The objective of CivicTrack is to provide elected leaders with a comprehensive view of development within their areas of representation while supporting central government institutions with a robust administration and data management platform.
-
-The platform combines planning information, development projects, public services, budget data, community issues, and performance indicators into a single, integrated environment.
-
----
+The objective is to improve planning, accountability, implementation monitoring, and evidence-based decision-making across all levels of government.
 
 ## Current Status
 
-**Phase 1: Enterprise Design System** ✅
+✅ Enterprise Design System Completed
+✅ First Working Version (Phase 1) — this repository
 
-The current repository contains the production-ready front-end design system that forms the foundation of the CivicTrack platform.
+Phase 1 is a real, running single-page application — not static mockups. It uses:
 
-Implemented components include:
+- **`index.html`** — the application shell
+- **`tokens.css`** — the design system (colours, spacing, type, elevation, motion, dark mode)
+- **`data.js`** — every data point used anywhere in the app, sourced from real documents (see below). Nothing is invented.
+- **`app.js`** — the router, session handling, and reusable UI component builders (cards, status pills, breadcrumbs, drill tabs, expandable panels, toasts)
+- **`views.js`** — one render function per screen, registered against the router
 
-* Responsive layouts
-* Dashboard framework
-* Design tokens
-* Enterprise navigation
-* Cards
-* Tables
-* Forms
-* KPI widgets
-* Status indicators
-* Utility classes
-* Government-focused UI components
+### What Phase 1 covers
 
-This stage focuses exclusively on interface architecture and user experience.
+- ✅ Working login (demo accounts only) and logout, with session persisted for the browser tab
+- ✅ Five real, data-backed roles: Member of Parliament, LC5, LC3, LC2, LC1
+- ✅ Interactive dashboards — NDP IV Programme-first (not budget-department-first), with expandable KPI tiles revealing real sub-data where it exists
+- ✅ Project monitoring — full project lists, filterable by stage, with breadcrumb navigation
+- ✅ Budget tracking — real district-level Programme performance for Kayunga District and Jinja District, pace-adjusted for differing report quarters; real Jinja City project budgets
+- ✅ A flagship deep drill-down (Bbaale HC IV maternity ward, Kayunga) with tabbed Overview / Timeline / Related Facilities views, real PPDA procurement-timeline benchmarks, and an Advocacy & Lobbying Toolkit
+- ✅ Dark mode (toggle in the top bar)
+- ✅ "Demo Mode" confirmation toasts on every simulated submission (photo capture, blocker report, Parliamentary Question draft, outcome log)
+- ✅ A constitutional guardrail built into both Advocacy Toolkits: MPs and District Councils are shown as performing oversight, coordination and advocacy — never as personally financing projects
 
----
+### Upcoming phases
 
-## Dashboard Users
+- Progressive disclosure extended to the remaining LC3/LC2/LC1 screens at the same depth as the MP/LC5 flagship chain
+- Inspection workflows
+- Community reporting at scale
+- AI-assisted insights
+- Additional institutional roles (Ministry, NPA, District Planner, CAO, RDC, Inspector, Development Partner) — deferred until real data feeds for each are confirmed, rather than demonstrated with invented information
+- Mobile-first responsive refinement pass
 
-At this stage, interactive dashboards are intended for elected leaders only:
+## Data Sources
 
-* Members of Parliament (MPs)
-* Local Council V (LC5)
-* Local Council IV (where applicable)
-* Local Council III
-* Local Council II
-* Local Council I
+Every figure in `data.js` traces back to one of:
 
-Each dashboard is tailored to the responsibilities and geographical scope of the respective office.
+- NPA Annual Performance Report, FY2024/25 (October 2025)
+- Kayunga District Local Government Quarterly Performance Report, FY2025/26 Q2
+- Jinja District Local Government Performance Reports, FY2024/25 Q4 and FY2025/26 Q1
+- Jinja City Approved Budget Estimates, FY2025/26
+- PPDA Regulations on procurement timelines
+- National Budget Speech, FY2026/27
 
----
-
-## Administrative Users
-
-The platform also provides administrative access for selected national institutions responsible for planning and coordination.
-
-These include:
-
-* National Planning Authority (NPA)
-* Parliament administration
-* Ministries, Departments and Agencies (MDAs)
-* Programme administrators
-* System administrators
-
-Administrative users are responsible for managing data, configuring the platform, validating information, and supporting reporting processes.
-
-**District technical staff are intentionally excluded from direct platform access during this prototype phase.** Their inclusion may be considered in future versions as workflows and governance arrangements evolve.
-
----
-
-## Planned Features
-
-Future development will include:
-
-* Constituency and local government dashboards
-* Development project tracking
-* NDP IV performance monitoring
-* Budget and expenditure tracking
-* Inspection workflows
-* Community issue reporting
-* Geographic information (GIS)
-* AI-assisted insights
-* Mobile-responsive experience
-* Interactive reports and analytics
-
----
-
-## Technology Stack
-
-* HTML5
-* CSS3
-* Vanilla JavaScript
-
-The current prototype intentionally avoids framework dependencies while establishing a scalable and maintainable enterprise design system.
-
----
+Where a figure could not be confirmed from these sources, `data.js` records that gap explicitly rather than filling it in — see any field marked `notAvailable: true`.
 
 ## Design Principles
 
-CivicTrack is built around the following principles:
+- Preserve a single shared design system
+- Responsive by default
+- Government-grade usability
+- Accessible
+- Professional
+- Clean
+- Maintainable
+- Expandable
 
-* Simplicity
-* Accessibility
-* Responsiveness
-* Reusability
-* Government-grade usability
-* Scalability
-* Clean architecture
-* Maintainability
+## Technology
 
----
+- HTML5
+- CSS3
+- Vanilla JavaScript
+
+(No backend. Session state lives in `sessionStorage` only, cleared when the browser tab closes — appropriate for a demo, not real authentication.)
+
+## Running It
+
+Open `index.html` directly in a browser, or serve the folder with any static file server. No build step, no dependencies.
 
 ## Project Vision
 
-To become a modern Government Planning and Performance Intelligence Platform that enables elected leaders to make informed decisions using timely, location-specific development information while providing government institutions with the tools needed to manage, monitor, and coordinate national development programmes.
-
----
-
-## Project Status
-
-🚧 Active Prototype
-
-The project is currently focused on front-end design, reusable enterprise components, and dashboard user experience.
-
-Backend services, authentication, workflows, APIs, AI capabilities, and advanced analytics will be introduced in future development phases.
+To become a modern Government Planning and Performance Intelligence Platform capable of supporting Parliament, Ministries, NPA, District Local Governments and Development Partners.
