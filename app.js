@@ -126,6 +126,7 @@ function ctTopbar(title, sub, roleKey){
   return `
     <div class="topbar">
       <div class="logo"></div>
+      <img src="NICE_UG_Logo.png" alt="NICE-UG" class="nice-ug-logo topbar-nice-logo">
       <div style="flex:1;">
         <div class="topbar-title">${title}</div>
         <div class="topbar-sub">${sub}</div>

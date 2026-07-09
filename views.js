@@ -13,7 +13,10 @@ ctRoute('#/login', function(){
   return `
     <div class="login-wrap">
       <div class="login-card card">
-        <div class="logo"></div>
+        <div class="login-logo-row">
+          <div class="logo"></div>
+          <img src="NICE_UG_Logo.png" alt="NICE-UG" class="nice-ug-logo login-nice-logo">
+        </div>
         <h1>CivicTrack</h1>
         <p>Sign in to track NDP IV in your constituency, district, sub-county, parish, or village.</p>
 
