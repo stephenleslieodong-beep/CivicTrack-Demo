@@ -6,10 +6,138 @@
 
 const D = CT_DATA; // shorthand
 
+// Combined, prefixed project list for LC5's cross-district project view —
+// used by the prev/next navigation on LC5 project detail screens.
+const CT_LC5_PROJECTS = [
+  ...D.kayunga.projects.map(p => ({ id: 'kyg-' + p.id, name: p.name })),
+  ...D.jinjaDistrict.projects.map(p => ({ id: 'jd-' + p.id, name: p.name }))
+];
+
+const CT_ROLE_DESC = {
+  mp:  "Constituency-level oversight & advocacy",
+  lc5: "District-level performance & comparison",
+  lc3: "Sub-county contractor & service monitoring",
+  lc2: "Parish-level project oversight & mobilization",
+  lc1: "Village-level field reporting"
+};
+
 // ---------------------------------------------------------------------------
-// LOGIN
+// DASHBOARD TILE MODALS — every clickable tile resolves to one of these.
+// Real figures use ctInfoModal; anything without a verified source uses
+// ctDemoModal, so nothing is ever a dead click.
+// ---------------------------------------------------------------------------
+function ctMPMoreProgrammesModal(){
+  const k = D.kayunga;
+  const extra = ['Private Sector Development', 'Digital Transformation', 'Tourism Development'];
+  const rows = extra.map(name => {
+    const p = k.programmes.find(pr => pr.name === name);
+    return `<div class="row"><div class="row-title">${name}</div><div class="row-sub" style="text-align:right;">${p.pct}% of ${ctFormatUGX(p.approved)} released</div></div>`;
+  }).join('');
+  ctInfoModal('More NDP IV Programmes — Kayunga', `<div class="card" style="margin:0;box-shadow:none;padding:0;">${rows}</div>`,
+    'Source: Kayunga District LG Quarterly Performance Report, FY2025/26 Q2, Section A2.');
+}
+
+function ctPDMModal(distKey){
+  const dist = D[distKey];
+  if (!dist || !dist.pdm){
+    ctDemoModal('Parish Development Model', 'PDM figures for this Local Government were not available in the report reviewed for this prototype.');
+    return;
+  }
+  const pdm = dist.pdm;
+  ctInfoModal('Parish Development Model — ' + dist.name, `
+    <div class="card" style="margin:0;box-shadow:none;padding:0;">
+      <div class="row"><div class="row-title">Households facilitated</div><div class="row-sub" style="text-align:right;">${pdm.householdsFacilitated.toLocaleString()}</div></div>
+      <div class="row"><div class="row-title">Parishes covered</div><div class="row-sub" style="text-align:right;">${pdm.parishes}</div></div>
+      <div class="row"><div class="row-title">Parish Chief monthly allowance</div><div class="row-sub" style="text-align:right;">${ctFormatUGX(pdm.parishChiefAllowance)}</div></div>
+    </div>`,
+    'Source: ' + dist.name + ' LG Quarterly Performance Report, FY2025/26 Q2.');
+}
+
+function ctLC3MetricModal(which){
+  const c = D.jinjaCity;
+  const mpumudde = c.projects.find(p => p.id === 'mpumudde-hc4');
+  const namulesa = c.projects.find(p => p.id === 'namulesa-market');
+  const src = 'Source: Jinja City Approved Budget Estimates, FY2025/26.';
+  if (which === 'health'){
+    ctInfoModal('Human Capital Development — Jinja City', `
+      <div class="card" style="margin:0;box-shadow:none;padding:0;">
+        <div class="row"><div class="row-title">${mpumudde.name}</div><div class="row-sub" style="text-align:right;">${ctFormatUGX(mpumudde.amount)}</div></div>
+        <div class="row"><div class="row-title">Coverage</div><div class="row-sub" style="text-align:right;">Plus city-wide health &amp; education budget lines</div></div>
+      </div>`, src);
+  } else if (which === 'transport'){
+    ctInfoModal('Integrated Transport Infrastructure — Jinja City', `
+      <div class="card" style="margin:0;box-shadow:none;padding:0;">
+        <div class="row"><div class="row-title">City-wide transport programme</div><div class="row-sub" style="text-align:right;">${ctFormatUGX(c.transportPogrammeTotal)}</div></div>
+        <div class="row"><div class="row-title">Patching various roads</div><div class="row-sub" style="text-align:right;">UGX 465m</div></div>
+        <div class="row"><div class="row-title">Drainage &amp; road repairs</div><div class="row-sub" style="text-align:right;">UGX 465m</div></div>
+      </div>`, src);
+  } else {
+    ctInfoModal('Private Sector Development — Jinja City', `
+      <div class="card" style="margin:0;box-shadow:none;padding:0;">
+        <div class="row"><div class="row-title">${namulesa.name}</div><div class="row-sub" style="text-align:right;">${ctFormatUGX(namulesa.amount)}</div></div>
+        <div class="row"><div class="row-title">Location</div><div class="row-sub" style="text-align:right;">${namulesa.location}</div></div>
+      </div>`, src);
+  }
+}
+
+function ctLC2NamulesaModal(){
+  const proj = D.jinjaCity.projects.find(p => p.id === 'namulesa-market');
+  ctInfoModal('Namulesa Market completion', `
+    <div class="card" style="margin:0;box-shadow:none;padding:0;">
+      <div class="row"><div class="row-title">Funded amount</div><div class="row-sub" style="text-align:right;">${ctFormatUGX(proj.amount)}</div></div>
+      <div class="row"><div class="row-title">Location</div><div class="row-sub" style="text-align:right;">${proj.location}</div></div>
+      <div class="row"><div class="row-title">Stage</div><div class="row-sub" style="text-align:right;">Funded, FY2025/26 — completion works</div></div>
+    </div>`, 'Source: Jinja City Approved Budget Estimates, FY2025/26.');
+}
+
+function ctLC1ProjectModal(){
+  const proj = D.jinjaCity.projects.find(p => p.id === 'namulesa-market');
+  ctInfoModal(proj.name, `
+    <div class="card" style="margin:0;box-shadow:none;padding:0;">
+      <div class="row"><div class="row-title">Funded amount</div><div class="row-sub" style="text-align:right;">${ctFormatUGX(proj.amount)}</div></div>
+      <div class="row"><div class="row-title">Ward</div><div class="row-sub" style="text-align:right;">Jinja North Ward</div></div>
+      <div class="row"><div class="row-title">On-the-ground status</div><div class="row-sub" style="text-align:right;">Not yet field-verified</div></div>
+    </div>`, 'Source: Jinja City Approved Budget Estimates, FY2025/26.');
+}
+
+// ---------------------------------------------------------------------------
+// LOGIN — STEP 1: SELECT POSITION
 // ---------------------------------------------------------------------------
 ctRoute('#/login', function(){
+  return `
+    <div class="login-wrap" style="max-width:720px;">
+      <div class="login-card card" style="padding-bottom:26px;">
+        <div class="login-logo-row">
+          <div class="logo"></div>
+          <img src="NICE_UG_Logo.png" alt="NICE-UG" class="nice-ug-logo login-nice-logo">
+        </div>
+        <h1>CivicTrack</h1>
+        <p>Select your position to see NDP IV tracked at your level of leadership.</p>
+      </div>
+
+      <div class="role-grid" style="padding:var(--space-5) 0 0;">
+        ${Object.keys(CT_ROLES).map(r => `
+          <div class="role-card card" onclick="ctSetPendingRole('${r}')">
+            <div class="role-icon" style="display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;">${CT_ROLES[r].badge}</div>
+            <div class="role-name">${CT_ROLES[r].label}</div>
+            <div class="role-desc">${CT_ROLE_DESC[r]}</div>
+          </div>`).join('')}
+      </div>
+
+      <p style="text-align:center;font-size:11px;color:var(--ct-text-muted);margin-top:20px;max-width:440px;margin-left:auto;margin-right:auto;">
+        These 5 roles have real data behind them in this prototype. Additional institutional roles — Ministry, NPA, District Planner, CAO, RDC, Inspector, Development Partner — are planned for a later phase, once real data feeds for each are confirmed. They are not shown here to avoid demonstrating them with invented information.
+      </p>
+    </div>`;
+});
+
+// ---------------------------------------------------------------------------
+// LOGIN — STEP 2: DEMO SIGN-IN (role already chosen; no real credentials
+// are required in this prototype — the demo access button skips them)
+// ---------------------------------------------------------------------------
+ctRoute('#/signin', function(){
+  const pendingKey = ctGetPendingRole();
+  const role = CT_ROLES[pendingKey];
+  if (!role){ return ''; } // router already redirects to #/login when this happens
   return `
     <div class="login-wrap">
       <div class="login-card card">
@@ -17,8 +145,8 @@ ctRoute('#/login', function(){
           <div class="logo"></div>
           <img src="NICE_UG_Logo.png" alt="NICE-UG" class="nice-ug-logo login-nice-logo">
         </div>
-        <h1>CivicTrack</h1>
-        <p>Sign in to track NDP IV in your constituency, district, sub-county, parish, or village.</p>
+        <h1>Sign in</h1>
+        <p>Signing in as <strong>${role.label}</strong>. <a href="#/login" style="color:var(--ct-black);font-weight:600;text-decoration:none;">Not you? Choose a different role →</a></p>
 
         <div class="login-field-label">Official phone number or Staff ID</div>
         <div class="login-field">e.g. 07XX XXX XXX or LC5-KYG-014</div>
@@ -26,23 +154,16 @@ ctRoute('#/login', function(){
         <div class="login-field-label">Password</div>
         <div class="login-field">••••••••••</div>
 
-        <button class="btn btn-black btn-large" onclick="ctToast('Real sign-in is not part of this demo — use a quick demo account below.')">Sign in</button>
-        <button class="btn" onclick="ctToast('OTP flow is not part of this demo — use a quick demo account below.')">Sign in with OTP instead</button>
+        <button class="btn btn-black btn-large" onclick="ctToast('Real sign-in is not part of this demo — use demo access below.')">Sign in</button>
+        <button class="btn" onclick="ctToast('OTP flow is not part of this demo — use demo access below.')">Sign in with OTP instead</button>
+
+        <button class="btn btn-yellow btn-large" style="margin-top:12px;" onclick="ctSetSession('${pendingKey}');location.hash=CT_ROLES['${pendingKey}'].home;">Continue with demo access →</button>
 
         <div class="verify-note">
-          <strong>How your identity is verified:</strong> against the Electoral Commission's elected office-holder roll and the Ministry of Local Government's LC1–LC5 structure records. NICE-UG does not issue credentials independently.
+          <strong>How your identity is verified:</strong> against the Electoral Commission's elected office-holder roll and the Ministry of Local Government's LC1–LC5 structure records. NICE-UG does not issue credentials independently. <strong>This prototype does not require real credentials</strong> — use "Continue with demo access" above.
         </div>
         <div class="help-link">New here? <a href="#" onclick="ctToast('Field support officer contact — demo only.');return false;">Contact your sub-region field support officer →</a></div>
       </div>
-
-      <p style="text-align:center;font-size:12px;color:var(--ct-text-secondary);margin-top:28px;margin-bottom:4px;font-weight:600;">Quick demo access</p>
-      <p style="text-align:center;font-size:11px;color:var(--ct-text-muted);margin-bottom:4px;">These 5 roles have real data behind them in this prototype.</p>
-      <div class="role-chip-row">
-        ${Object.keys(CT_ROLES).map(r => `<a class="role-chip" href="#" onclick="ctSetSession('${r}');location.hash=CT_ROLES['${r}'].home;return false;"><span class="dot"></span>${CT_ROLES[r].label}</a>`).join('')}
-      </div>
-      <p style="text-align:center;font-size:11px;color:var(--ct-text-muted);margin-top:16px;max-width:380px;margin-left:auto;margin-right:auto;">
-        Additional institutional roles — Ministry, NPA, District Planner, CAO, RDC, Inspector, Development Partner — are planned for a later phase, once real data feeds for each are confirmed. They are not shown here to avoid demonstrating them with invented information.
-      </p>
     </div>`;
 });
 
@@ -74,10 +195,17 @@ ctRoute('#/mp/dashboard', function(){
             <div class="cta">View all projects →</div>
           </div>
         </a>
-        <div class="indicator-card">
+        <div class="indicator-card clickable" onclick="ctMPMoreProgrammesModal()">
           <div class="icat">More Programmes</div>
           <div class="ival" style="color:var(--ct-text-secondary);font-size:16px;">+3 more</div>
           <div class="isub">Private Sector Dev (40%) · Digital Transformation (34%) · Tourism (25%)</div>
+          <div class="cta">View detail →</div>
+        </div>
+        <div class="indicator-card clickable" onclick="ctPDMModal('kayunga')">
+          <div class="icat">Parish Development Model</div>
+          <div class="ival good">${k.pdm.householdsFacilitated.toLocaleString()}</div>
+          <div class="isub">households facilitated across ${k.pdm.parishes} parishes</div>
+          <div class="cta">View detail →</div>
         </div>
       </div>
       <div class="footer-note">Sample screen — every figure sourced from Kayunga District's own Local Government Quarterly Performance Report, FY2025/26 (Q2), Section A2.</div>
@@ -116,6 +244,7 @@ ctRoute('#/mp/project/bbaale-hc4', function(){
   return ctTopbar('Hon. [MP Name] — Kayunga North County', 'Projects › ' + proj.name, 'mp') + `
     <div class="content">
       ${ctBreadcrumb([{label:'Dashboard', href:'#/mp/dashboard'},{label:'Projects', href:'#/mp/projects'},{label:proj.name}])}
+      ${ctPrevNextNav(D.kayunga.projects, proj.id, '#/mp/project/')}
 
       <div class="alert-banner">
         <div class="alert-banner-title">Uganda ranks second-worst globally for project delays — World Bank</div>
@@ -191,8 +320,8 @@ ctRoute('#/mp/project/bbaale-hc4', function(){
           </div>
           <div class="card">
             <div class="card-title">Other MPs facing the same gap</div>
-            <span class="ally-chip"><span class="avatar"></span>Bukamba constituency MP</span>
-            <span class="ally-chip"><span class="avatar"></span>Ntenjeru North MP</span>
+            <span class="ally-chip" style="cursor:pointer;" onclick="ctDemoModal('Bukamba constituency MP', 'Cross-MP coordination workflows are not yet built in this prototype.')"><span class="avatar"></span>Bukamba constituency MP</span>
+            <span class="ally-chip" style="cursor:pointer;" onclick="ctDemoModal('Ntenjeru North MP', 'Cross-MP coordination workflows are not yet built in this prototype.')"><span class="avatar"></span>Ntenjeru North MP</span>
           </div>
         </div>
       </div>
@@ -207,6 +336,7 @@ Object.values(D.kayunga.projects).forEach(function(proj){
     return ctTopbar('Hon. [MP Name] — Kayunga North County', 'Projects › ' + proj.name, 'mp') + `
       <div class="content">
         ${ctBreadcrumb([{label:'Dashboard', href:'#/mp/dashboard'},{label:'Projects', href:'#/mp/projects'},{label:proj.name}])}
+        ${ctPrevNextNav(D.kayunga.projects, proj.id, '#/mp/project/')}
         <div class="screen-title">${proj.name}</div>
         <div class="screen-sub">${proj.sector} · ${proj.location} · NDP IV Programme: ${proj.programme}</div>
         <div class="card">
@@ -244,6 +374,7 @@ ctRoute('#/lc5/dashboard', function(){
           <div class="compare-row"><span class="label">Integrated Transport Infrastructure</span><span class="value amber">${k.programmes.find(p=>p.name==='Integrated Transport Infrastructure and Services').pct}%</span></div>
           <div class="compare-row"><span class="label">Public Sector Transformation</span><span class="value danger">${k.programmes.find(p=>p.name==='Public Sector Transformation').pct}%</span></div>
           <div class="compare-row"><span class="label">Stalled projects flagged</span><span class="value danger">${k.projects.filter(p=>p.stageStatus==='stalled').length}</span></div>
+          <div class="compare-row" style="cursor:pointer;" onclick="ctPDMModal('kayunga')"><span class="label">PDM households facilitated</span><span class="value good">${k.pdm.householdsFacilitated.toLocaleString()} ›</span></div>
         </div>
         <div class="compare-card">
           <h4>${j.name}</h4>
@@ -253,6 +384,7 @@ ctRoute('#/lc5/dashboard', function(){
           <div class="compare-row"><span class="label">Integrated Transport Infrastructure</span><span class="value danger">${j.programmes.find(p=>p.name==='Integrated Transport Infrastructure and Services').pct}%</span></div>
           <div class="compare-row"><span class="label">Sustainable Urbanisation &amp; Housing</span><span class="value danger">${j.programmes.find(p=>p.name==='Sustainable Urbanisation and Housing').pct}%</span></div>
           <div class="compare-row"><span class="label">Stalled projects flagged</span><span class="value danger">${j.projects.filter(p=>p.stageStatus==='stalled').length}+</span></div>
+          <div class="compare-row"><span class="label">PDM households facilitated</span><span class="value" style="color:var(--ct-text-muted);font-weight:500;font-size:12px;">not in report reviewed</span></div>
         </div>
       </div>
 
@@ -302,6 +434,7 @@ ctRoute('#/lc5/project/jd-buwolero-road', function(){
   return ctTopbar('District Council Dashboard', 'Projects › Jinja District › ' + proj.name, 'lc5') + `
     <div class="content">
       ${ctBreadcrumb([{label:'Dashboard', href:'#/lc5/dashboard'},{label:'Projects', href:'#/lc5/projects'},{label:proj.name}])}
+      ${ctPrevNextNav(CT_LC5_PROJECTS, 'jd-' + proj.id, '#/lc5/project/')}
       <div class="alert-banner">
         <div class="alert-banner-title">Uganda ranks second-worst globally for project delays — World Bank</div>
         <div class="alert-banner-source">Cited by the Secretary to the Treasury, 2026 Public Procurement Cadre Forum</div>
@@ -354,6 +487,7 @@ ctRoute('#/lc5/project/jd-buwolero-road', function(){
     return ctTopbar('District Council Dashboard', 'Projects › ' + proj.name, 'lc5') + `
       <div class="content">
         ${ctBreadcrumb([{label:'Dashboard', href:'#/lc5/dashboard'},{label:'Projects', href:'#/lc5/projects'},{label:proj.name}])}
+        ${ctPrevNextNav(CT_LC5_PROJECTS, proj.prefix + proj.id, '#/lc5/project/')}
         <div class="screen-title">${proj.name}</div>
         <div class="screen-sub">${proj.sector} · ${proj.location}</div>
         <div class="card">
@@ -377,17 +511,17 @@ ctRoute('#/lc3/dashboard', function(){
       <div class="card" style="background:var(--ct-panel-grey);border-style:dashed;">
         <div style="font-size:11.5px;color:#4A4943;"><strong>Note:</strong> ${c.documentType} — so this screen shows Programme-level funding, not % released.</div>
       </div>
-      <div class="metric-card" style="margin-bottom:12px;">
+      <div class="metric-card" style="margin-bottom:12px;cursor:pointer;" onclick="ctLC3MetricModal('health')">
         <div class="metric-label">Human Capital Development</div>
         <div class="metric-value good">${ctFormatUGX(mpumudde.amount)}+</div>
         <div class="isub">Mpumudde maternity roof renovation, plus city-wide health &amp; education lines</div>
       </div>
-      <div class="metric-card" style="margin-bottom:12px;">
+      <div class="metric-card" style="margin-bottom:12px;cursor:pointer;" onclick="ctLC3MetricModal('transport')">
         <div class="metric-label">Integrated Transport Infrastructure</div>
         <div class="metric-value good">${ctFormatUGX(c.transportPogrammeTotal)}</div>
         <div class="isub">city-wide — includes patching &amp; drainage repairs, UGX 465m each</div>
       </div>
-      <div class="metric-card" style="margin-bottom:12px;">
+      <div class="metric-card" style="margin-bottom:12px;cursor:pointer;" onclick="ctLC3MetricModal('private')">
         <div class="metric-label">Private Sector Development</div>
         <div class="metric-value good">${ctFormatUGX(c.projects.find(p=>p.id==='namulesa-market').amount)}</div>
         <div class="isub">Namulesa Market completion (Jinja North Division)</div>
@@ -441,12 +575,12 @@ ctRoute('#/lc2/dashboard', function(){
     <div class="content">
       <div class="screen-title">Dashboard</div>
       <div class="screen-sub">Ward-level view, Jinja City FY2025/26 approved budget</div>
-      <div class="metric-card" style="margin-bottom:12px;">
+      <div class="metric-card" style="margin-bottom:12px;cursor:pointer;" onclick="ctLC2NamulesaModal()">
         <div class="metric-label">Namulesa Market completion</div>
         <div class="metric-value good">${ctFormatUGX(proj.amount)}</div>
         <div class="isub">funded, FY2025/26</div>
       </div>
-      <div class="metric-card" style="margin-bottom:12px;">
+      <div class="metric-card" style="margin-bottom:12px;cursor:pointer;" onclick="ctDemoModal('Vendors affected', 'This estimate (Sample: 140) is illustrative for this prototype — no verified vendor count exists in the budget document reviewed.')">
         <div class="metric-label">Vendors affected</div>
         <div class="metric-value">Sample: 140</div>
         <div class="isub">estimated market stall holders</div>
@@ -458,9 +592,9 @@ ctRoute('#/lc2/dashboard', function(){
       <div class="stage-caption">Funded to completion — construction status not yet field-verified</div>
       <div class="card">
         <div class="card-title">Mobilization tasks</div>
-        <div class="row"><div class="row-title">Market vendor association</div><span class="chevron">›</span></div>
-        <div class="row"><div class="row-title">Boda-boda stage leaders</div><span class="chevron">›</span></div>
-        <div class="row"><div class="row-title">Church leaders</div><span class="chevron">›</span></div>
+        <div class="row" style="cursor:pointer;" onclick="ctDemoModal('Market vendor association', 'Per-group mobilization workflows are not yet built in this prototype.')"><div class="row-title">Market vendor association</div><span class="chevron">›</span></div>
+        <div class="row" style="cursor:pointer;" onclick="ctDemoModal('Boda-boda stage leaders', 'Per-group mobilization workflows are not yet built in this prototype.')"><div class="row-title">Boda-boda stage leaders</div><span class="chevron">›</span></div>
+        <div class="row" style="cursor:pointer;" onclick="ctDemoModal('Church leaders', 'Per-group mobilization workflows are not yet built in this prototype.')"><div class="row-title">Church leaders</div><span class="chevron">›</span></div>
       </div>
       <a href="#/lc2/mobilize" class="btn btn-yellow" style="text-decoration:none;display:block;text-align:center;">Open mobilization workspace →</a>
       <div class="footer-note">Sample screen — funding figure sourced from Jinja City's approved FY2025/26 Budget Estimates; vendor count and mobilization detail are illustrative.</div>
@@ -501,7 +635,7 @@ ctRoute('#/lc1/dashboard', function(){
   const proj = D.jinjaCity.projects.find(p => p.id === 'namulesa-market');
   return ctTopbar('Namulesa Cell', 'Jinja North Ward, Jinja City', 'lc1') + `
     <div class="content">
-      <div class="card" style="text-align:center;padding:28px 16px;">
+      <div class="card" style="text-align:center;padding:28px 16px;cursor:pointer;" onclick="ctLC1ProjectModal()">
         <div class="card-title" style="font-size:16px;justify-content:center;">Project near you</div>
         <p style="font-size:14px;margin:8px 0 16px;">${proj.name} — completion works, funded ${ctFormatUGX(proj.amount)}</p>
         <div class="dot-tracker" style="justify-content:center;">

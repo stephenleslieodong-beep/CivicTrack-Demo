@@ -26,6 +26,13 @@ function ctLogout(){
   sessionStorage.removeItem('ct_session');
   location.hash = '#/login';
 }
+function ctSetPendingRole(role){
+  sessionStorage.setItem('ct_pending_role', role);
+  location.hash = '#/signin';
+}
+function ctGetPendingRole(){
+  return sessionStorage.getItem('ct_pending_role');
+}
 
 // ---------------------------------------------------------------------------
 // TOAST — "Demo Mode" confirmations for every simulated submission
@@ -45,6 +52,49 @@ function ctToast(message, opts){
 }
 function ctDemoModeToast(action){
   ctToast((action ? action + ' — ' : '') + 'Demo Mode — displayed for demonstration only, not permanently stored.', { duration: 3800 });
+}
+
+// ---------------------------------------------------------------------------
+// MODAL — two flavors: real content (ctInfoModal) and a DEMO stamp for
+// tiles/rows that don't have verified data behind them yet (ctDemoModal).
+// Every clickable dashboard element resolves to one of these two — nothing
+// is a dead click.
+// ---------------------------------------------------------------------------
+function ctOpenModal(innerHtml){
+  ctCloseModal();
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.id = 'ctModalOverlay';
+  overlay.onclick = function(e){ if (e.target === overlay) ctCloseModal(); };
+  overlay.innerHTML = '<div class="modal-box" style="position:relative;">' +
+    '<button class="modal-close" onclick="ctCloseModal()" aria-label="Close">✕</button>' + innerHtml + '</div>';
+  document.body.appendChild(overlay);
+  document.addEventListener('keydown', ctModalEscHandler);
+}
+function ctCloseModal(){
+  const el = document.getElementById('ctModalOverlay');
+  if (el) el.remove();
+  document.removeEventListener('keydown', ctModalEscHandler);
+}
+function ctModalEscHandler(e){ if (e.key === 'Escape') ctCloseModal(); }
+
+function ctInfoModal(title, bodyHtml, sourceLine){
+  ctOpenModal(`
+    <h3>${title}</h3>
+    <div style="margin-top:10px;">${bodyHtml}</div>
+    ${sourceLine ? `<div class="footer-note" style="margin-top:16px;text-align:left;font-style:normal;">${sourceLine}</div>` : ''}
+  `);
+}
+
+function ctDemoModal(title, note){
+  ctOpenModal(`
+    <div class="demo-stamp-wrap">
+      <div class="demo-stamp">DEMO</div>
+      <h3 style="margin-top:6px;">${title}</h3>
+      <p style="font-size:13px;color:var(--ct-text-secondary);line-height:var(--lh-sm);margin-top:6px;">
+        ${note || 'This element is not backed by a verified figure from a reviewed government report in this prototype. In the production version, this would open a live drill-down connected to the underlying data source.'}
+      </p>
+    </div>`);
 }
 
 // ---------------------------------------------------------------------------
@@ -125,6 +175,8 @@ function ctTopbar(title, sub, roleKey){
   const role = CT_ROLES[roleKey];
   return `
     <div class="topbar">
+      <button class="theme-toggle nav-arrow-btn" onclick="history.back()" style="position:static;" title="Back">←</button>
+      <button class="theme-toggle nav-arrow-btn" onclick="history.forward()" style="position:static;margin-right:4px;" title="Forward">→</button>
       <div class="logo"></div>
       <img src="NICE_UG_Logo.png" alt="NICE-UG" class="nice-ug-logo topbar-nice-logo">
       <div style="flex:1;">
@@ -154,6 +206,23 @@ function ctConstitutionalNote(text){
   return `<div class="constitutional-note"><span class="icon">ⓘ</span><span><strong>Role reminder:</strong> ${text}</span></div>`;
 }
 
+function ctPrevNextNav(list, currentId, hrefBase){
+  const idx = list.findIndex(p => p.id === currentId);
+  if (idx === -1) return '';
+  const prev = idx > 0 ? list[idx - 1] : null;
+  const next = idx < list.length - 1 ? list[idx + 1] : null;
+  return `
+    <div class="proj-nav">
+      ${prev
+        ? `<a class="proj-nav-btn" href="${hrefBase}${prev.id}"><span class="proj-nav-arrow">‹</span><span><span class="proj-nav-label">Previous</span><span class="proj-nav-name">${prev.name}</span></span></a>`
+        : `<span class="proj-nav-btn disabled"><span class="proj-nav-arrow">‹</span><span><span class="proj-nav-label">Previous</span><span class="proj-nav-name">Start of list</span></span></span>`}
+      <span class="proj-nav-pos">${idx + 1} / ${list.length}</span>
+      ${next
+        ? `<a class="proj-nav-btn next" href="${hrefBase}${next.id}"><span><span class="proj-nav-label">Next</span><span class="proj-nav-name">${next.name}</span></span><span class="proj-nav-arrow">›</span></a>`
+        : `<span class="proj-nav-btn disabled next"><span><span class="proj-nav-label">Next</span><span class="proj-nav-name">End of list</span></span><span class="proj-nav-arrow">›</span></span>`}
+    </div>`;
+}
+
 // ---------------------------------------------------------------------------
 // ROUTER
 // ---------------------------------------------------------------------------
@@ -165,7 +234,13 @@ function ctRender(){
   const session = ctGetSession();
   let path = location.hash || '#/login';
 
-  if (path !== '#/login' && !session){
+  const publicRoutes = ['#/login', '#/signin'];
+  if (!publicRoutes.includes(path) && !session){
+    location.hash = '#/login';
+    return;
+  }
+  // #/signin requires a role to have been picked in step 1
+  if (path === '#/signin' && !ctGetPendingRole()){
     location.hash = '#/login';
     return;
   }

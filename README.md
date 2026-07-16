@@ -7,19 +7,20 @@ The objective is to improve planning, accountability, implementation monitoring,
 ## Current Status
 
 ✅ Enterprise Design System Completed
-
-The repository currently contains the production design system that will be used across the entire application.
+✅ Two-step login flow (select position → demo sign-in, no real credentials required)
+✅ Role-based dashboards for MP, LC5, LC3, LC2, LC1
+✅ Back/forward browser navigation controls, plus prev/next navigation between projects
+✅ Every dashboard tile is clickable — resolves to either real sourced data (info modal) or a clearly labeled DEMO modal, never a dead click
+✅ Parish Development Model figures surfaced (Kayunga: real data; other LGs: honestly labeled as not available in the reviewed report)
 
 Upcoming phases include:
 
-- Interactive dashboards
-- Role-based interfaces
-- Project monitoring
-- Budget tracking
+- Budget tracking depth (per-line drill-down)
 - Inspection workflows
-- Community reporting
+- Community reporting expansion
 - AI-assisted insights
 - Mobile-first responsive experience
+- Additional institutional roles (Ministry, NPA, District Planner, CAO, RDC, Inspector, Development Partner) once real data feeds are confirmed
 
 ## Design Principles
 
